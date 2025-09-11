@@ -295,8 +295,8 @@ function main() {
     debug "EXTERNAL_KEYS_URL: $EXTERNAL_KEYS_URL"
     debug "EXTERNAL_KEYS_FILE: $EXTERNAL_KEYS_FILE"
 
-    if ! (curl -sS "$EXTERNAL_KEYS_URL" > "$EXTERNAL_KEYS_FILE"); then
-      err "Curl command failed: 'curl -sS $EXTERNAL_KEYS_URL'"
+    if ! (curl -sSL --fail "$EXTERNAL_KEYS_URL" | grep '^ssh' > "$EXTERNAL_KEYS_FILE"); then
+      err "Curl command failed: 'curl -sSL --fail $EXTERNAL_KEYS_URL'"
       cerr "Result:"
       >&2 cat "$EXTERNAL_KEYS_FILE"
       return 1
