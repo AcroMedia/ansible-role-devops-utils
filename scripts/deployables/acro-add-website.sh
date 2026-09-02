@@ -332,7 +332,7 @@ function sanity_checks_pass () {
     DPKG_SERVER="nginx"
   fi
 
-  echo "$PACKAGELIST" | grep -w "${DPKG_SERVER}" |grep -qE 'ubuntu|bionic|focal|jammy' || {
+  echo "$PACKAGELIST" | grep -w "${DPKG_SERVER}" | grep -qE 'ubuntu|bionic|focal|jammy|noble|resolute' || {
      warn "This script only supports NGINX/Apache2 on Ubuntu 18.04 or newer. Proceed at your own risk."
   }
 
