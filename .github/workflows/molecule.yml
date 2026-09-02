@@ -27,8 +27,9 @@ jobs:
     strategy:
       matrix:
         image:
-          - registry.gitlab.com/aussielunix/ansible/molecule-containers/ubuntu:jammy
-          - registry.gitlab.com/aussielunix/ansible/molecule-containers/ubuntu:focal
+          - geerlingguy/docker-ubuntu2604-ansible:latest
+          - geerlingguy/docker-ubuntu2404-ansible:latest
+          - geerlingguy/docker-ubuntu2204-ansible:latest
           - registry.gitlab.com/aussielunix/ansible/molecule-containers/rockylinux:9
     steps:
       - name: checkout
