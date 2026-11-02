@@ -2,7 +2,7 @@
 # @TODO: replace the Makefile with real ansible tasks
 
 - name: Create an install dir on the host
-  file:
+  ansible.builtin.file:
     state: directory
     dest: /root/.acromedia-install-ansible-role-devops-utils
     mode: '0700'
@@ -11,13 +11,13 @@
   register: remote_tempdir_result
 
 - name: Sync local scripts to the remote temp dir
-  synchronize:
+  ansible.posix.synchronize:
     src: "scripts/deployables/"
     dest: "{{ remote_tempdir_result.path }}/"
     recursive: true
-    perms: no
-    group: no
-    owner: no
+    perms: false
+    group: false
+    owner: false
     use_ssh_args: "{{ synchronize_use_ssh_args | default(omit) }}"
     rsync_opts:
       - "--exclude=.git"
@@ -25,15 +25,16 @@
     and remote_tempdir_result.path is defined
   register: upload_result
 
-- name: Run '{{ make_cmd }}' in the remote temp dir
-  shell: "{{ make_cmd }}"
+- name: Run the install command in the remote temp dir {{ make_cmd }}
+  ansible.builtin.command: "{{ make_cmd }}"
   args:
     chdir: "{{ remote_tempdir_result.path }}/"
   when: upload_result is defined
     and upload_result.changed
+  changed_when: true
 
 - name: Upload aau config template
-  template:
+  ansible.builtin.template:
     src: "{{ role_path }}/templates{{ item }}.j2"
     dest: "{{ item }}"
     backup: true
@@ -44,8 +45,11 @@
     - /etc/acro/add-user.conf
 
 - name: Upload aau data file
-  copy:
+  ansible.builtin.copy:
     src: "{{ aau_data_source }}"
     dest: /etc/acro/add-user.data
     backup: true
+    owner: root
+    group: root
+    mode: '0644'
   when: aau_data_source != ''
