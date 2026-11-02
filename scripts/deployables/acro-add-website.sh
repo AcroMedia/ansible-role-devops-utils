@@ -476,6 +476,13 @@ function sanity_checks_pass () {
 
 }
 
+function leave_mount_point_alone () {
+  local DIR="$1"
+  mountpoint -q "$DIR" || return 1
+  warn "Leaving ownership and permissions of ${DIR} alone because it is a mount point."
+  return 0
+}
+
 function is_root () {
   if [[ $EUID -eq 0 ]]; then
     true
@@ -674,6 +681,7 @@ function assert_project_structure () {
   for ((i=0; i < ${#directories[@]}; i++)); do
     DIR="${directories[$i]}"
     test -d "$DIR" || (mkdir "$DIR" && chown "$USERACCOUNT:" "$DIR")
+    leave_mount_point_alone "$DIR" && continue
     chmod 751 "$DIR"
   done
 
@@ -687,6 +695,7 @@ function assert_project_structure () {
   for ((i=0; i < ${#public_dirs[@]}; i++)); do
     DIR="${public_dirs[$i]}"
     test -d "$DIR" || (mkdir "$DIR" && chown "$USERACCOUNT:" "$DIR")
+    leave_mount_point_alone "$DIR" && continue
     chmod 755 "$DIR"
   done
 
@@ -716,12 +725,16 @@ function assert_project_structure () {
 
 
   # permissions private + files
-  chown -R "$USERACCOUNT:$SERVICEACCOUNT" "$FILES_DIR"
-  find "$FILES_DIR" -type d -exec chmod 2771 {} \;
-  find "$FILES_DIR" -type f -exec chmod 664 {} \;
-  chown -R "$USERACCOUNT:$SERVICEACCOUNT" "$PRIVATE_DIR"
-  find "$PRIVATE_DIR" -type d -exec chmod 2770 {} \;
-  find "$PRIVATE_DIR" -type f -exec chmod 660 {} \;
+  if ! leave_mount_point_alone "$FILES_DIR"; then
+    chown -R "$USERACCOUNT:$SERVICEACCOUNT" "$FILES_DIR"
+    find "$FILES_DIR" -type d -exec chmod 2771 {} \;
+    find "$FILES_DIR" -type f -exec chmod 664 {} \;
+  fi
+  if ! leave_mount_point_alone "$PRIVATE_DIR"; then
+    chown -R "$USERACCOUNT:$SERVICEACCOUNT" "$PRIVATE_DIR"
+    find "$PRIVATE_DIR" -type d -exec chmod 2770 {} \;
+    find "$PRIVATE_DIR" -type f -exec chmod 660 {} \;
+  fi
 
   local INDEXFILE
   if [[ "$PHP_VERSION" == 'none' ]]; then
