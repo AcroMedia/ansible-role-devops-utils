@@ -1,7 +1,5 @@
 ---
 on:
-  # Trigger the workflow on push or pull request,
-  # but only for the main branch
   push:
     branches:
       - master
@@ -13,33 +11,36 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout
-        uses: actions/checkout@v2
-        with:
-          path: "${{ github.repository }}"
-      - name: molecule
-        uses: robertdebock/molecule-action@2.6.3
-        with:
-          command: lint
+        uses: actions/checkout@v4
+      - name: Run ansible-lint
+        uses: ansible/ansible-lint@main
   test:
     needs:
       - lint
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         image:
           - geerlingguy/docker-ubuntu2604-ansible:latest
           - geerlingguy/docker-ubuntu2404-ansible:latest
           - geerlingguy/docker-ubuntu2204-ansible:latest
-          - registry.gitlab.com/aussielunix/ansible/molecule-containers/rockylinux:9
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          path: "${{ github.repository }}"
-      - name: molecule
-        uses: robertdebock/molecule-action@4.0.9
-        with:
-          image: "${{ matrix.image }}"
-          options: parallel
+          python-version: '3.11'
+
+      - name: Install test dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run Molecule tests
+        run: molecule test
         env:
+          ANSIBLE_ROLES_PATH: "${{ github.workspace }}/.."
           MOLECULE_DOCKER_IMAGE: "${{ matrix.image }}"
+          PY_COLORS: '1'
+          ANSIBLE_FORCE_COLOR: '1'
