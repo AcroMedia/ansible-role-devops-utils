@@ -1,63 +1,32 @@
-- name: Make sure rsync is installed (locally) on the ansible controller.
-    This is only necessary for testing roles that use rsync, because the fedora
-    image from robertdebock does not come with rsync installed.
+---
+- name: Make sure rsync is installed on the ansible controller
   hosts: localhost
   connection: local
-  become: no
-  gather_facts: yes
+  become: false
+  gather_facts: true
   tasks:
 
-    - name: Update yum cache on the controller
-      yum:
-        update_cache: yes
-      when: ansible_os_family == 'RedHat'
-
-    - name: Ensure ssh client is installed on the controller
-      package:
-        name:
-          - openssh-clients
-        state: present
-      when: ansible_os_family == 'RedHat'
-
     - name: Ensure rsync exists on the controller
-      package:
+      ansible.builtin.package:
         name:
           - rsync
         state: present
 
-- name: Prepare II - Prepare the test image for Converge
+- name: Prepare the test image for Converge
   hosts: all
-  become: yes
-  gather_facts: yes
+  become: true
+  gather_facts: true
   tasks:
 
-    - name: Update apt cache.
-      apt:
-        update_cache: yes
-      when: ansible_os_family == 'Debian'
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
 
-    - name: Update yum cache
-      yum:
-        update_cache: yes
-      when: ansible_os_family == 'RedHat'
-
-    - name: Ensure OS-specific dependencies are present in test image
-      package:
-        name: "{{ package_dependencies }}"
-        state: present
-      vars:
-        package_dependencies:
-          - util-linux-user
-      when: ansible_distribution == 'CentOS'
-        and ansible_distribution_major_version == '8'
-
-    - name: Ensure OS-Agnostic dependencies are present in test image
-      package:
-        name: "{{ package_dependencies }}"
-        state: present
-      vars:
-        package_dependencies:
+    - name: Ensure dependencies are present in test image
+      ansible.builtin.package:
+        name:
           - rsync
           - make
           - findutils
           - sudo
+        state: present
